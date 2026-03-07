@@ -1,5 +1,7 @@
+CFLAGS += -Wall -Wextra -Wpedantic
+
 krx:
-	cc -Wall -Wextra -Wpedantic krx.c -o krx
+	$(CC) $(CFLAGS) krx.c -o krx
 
 clean:
 	rm -f *.out krx ktx
