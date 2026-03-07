@@ -94,6 +94,12 @@ void kermit_send(uint8_t *pkt)
 	uint8_t sended = 0;
 	uint8_t total = kermit_len_get(pkt) + KERMIT_EOL_SIZE;
 	int ret;
+	if (total > (2 + kermit_unchar(126) + KERMIT_EOL_SIZE)) {
+		return;
+	}
+	if (kermit_sum_chk(pkt) == false) {
+		return;
+	}
 	while (sended < total) {
 		ret = write(link_tx_fd, &pkt[sended], total - sended);
 		if (ret < 0) {
