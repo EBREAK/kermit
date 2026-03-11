@@ -1,7 +1,7 @@
-CFLAGS += -Wall -Wextra -Wpedantic
+CFLAGS += -Wall -Wextra -Wpedantic -Oz -ggdb
 
-krx:
-	$(CC) $(CFLAGS) krx.c -o krx
+kr:
+	$(CC) $(CFLAGS) kermit.c kermit_test.c kr.c -o kr
 
 clean:
-	rm -f *.out krx ktx
+	rm -f *.out kr
