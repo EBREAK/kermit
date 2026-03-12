@@ -234,6 +234,46 @@ uint8_t kermit_param_fill(uint8_t *out, uint8_t outmaxlen)
 		out[KERMIT_PARAM_MAXL] = kermit_tochar(maxl);
 		ret += 1;
 	}
+	if (outmaxlen > KERMIT_PARAM_TIMO) {
+		out[KERMIT_PARAM_TIMO] = kermit_tochar(1);
+		ret += 1;
+	}
+	if (outmaxlen > KERMIT_PARAM_NPAD) {
+		out[KERMIT_PARAM_NPAD] = kermit_tochar(0);
+		ret += 1;
+	}
+	if (outmaxlen > KERMIT_PARAM_PADC) {
+		out[KERMIT_PARAM_PADC] = 0 ^ 0x40;
+		ret += 1;
+	}
+	if (outmaxlen > KERMIT_PARAM_EOLC) {
+		out[KERMIT_PARAM_EOLC] = kermit_tochar('\r');
+		ret += 1;
+	}
+	if (outmaxlen > KERMIT_PARAM_QCTL) {
+		out[KERMIT_PARAM_QCTL] = '#';
+		ret += 1;
+	}
+	if (outmaxlen > KERMIT_PARAM_QBIN) {
+		out[KERMIT_PARAM_QBIN] = 'N';
+		ret += 1;
+	}
+	if (outmaxlen > KERMIT_PARAM_CHKT) {
+		out[KERMIT_PARAM_CHKT] = '1';
+		ret += 1;
+	}
+	if (outmaxlen > KERMIT_PARAM_REPT) {
+		out[KERMIT_PARAM_REPT] = ' ';
+		ret += 1;
+	}
+	if (outmaxlen > KERMIT_PARAM_CAPS) {
+		out[KERMIT_PARAM_CAPS] = kermit_tochar(KERMIT_CAP_SWIN);
+		ret += 1;
+	}
+	if (outmaxlen > KERMIT_PARAM_WIND) {
+		out[KERMIT_PARAM_WIND] = kermit_tochar(KERMIT_WINSIZE);
+		ret += 1;
+	}
 	return ret;
 }
 
