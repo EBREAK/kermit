@@ -33,10 +33,6 @@ static void kermit_fhdr_cb(struct kermit_context *kctx)
 {
 	char *fn;
 	int fnlen;
-	if (kermit_seq_isdup(kctx, kermit_seq_get(kctx->buf))) {
-		kermit_ack(kctx, kermit_seq_get(kctx->buf));
-		return;
-	}
 	if (file_fd >= 0) {
 		close(file_fd);
 	}
@@ -65,10 +61,6 @@ static void kermit_data_cb(struct kermit_context *kctx)
 	uint8_t *wbuf;
 	uint8_t idx, len;
 	int ret;
-	if (kermit_seq_isdup(kctx, kermit_seq_get(kctx->buf))) {
-		kermit_ack(kctx, kermit_seq_get(kctx->buf));
-		return;
-	}
 	if (file_fd < 0) {
 		perror("NO FILE OPEN");
 		kermit_error(kctx, "NO FILE OPEN");
@@ -93,10 +85,6 @@ static void kermit_data_cb(struct kermit_context *kctx)
 
 static void kermit_eof_cb(struct kermit_context *kctx)
 {
-	if (kermit_seq_isdup(kctx, kermit_seq_get(kctx->buf))) {
-		kermit_ack(kctx, kermit_seq_get(kctx->buf));
-		return;
-	}
 	if (file_fd < 0) {
 		perror("NO FILE OPEN");
 		kermit_error(kctx, "NO FILE OPEN");
@@ -111,10 +99,6 @@ static void kermit_eof_cb(struct kermit_context *kctx)
 
 static void kermit_break_cb(struct kermit_context *kctx)
 {
-	if (kermit_seq_isdup(kctx, kermit_seq_get(kctx->buf))) {
-		kermit_ack(kctx, kermit_seq_get(kctx->buf));
-		return;
-	}
 	kermit_ack(kctx, kctx->lseqn);
 	fprintf(stderr, "BREAK\n");
 	exit(EXIT_SUCCESS);

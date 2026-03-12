@@ -302,17 +302,15 @@ void kermit_handle_sinit(struct kermit_context *kctx)
 	kermit_pkt_send(kctx);
 }
 
-bool kermit_seq_isdup(struct kermit_context *kctx, uint8_t seqn)
+bool kermit_seq_acked(struct kermit_context *kctx, uint8_t seqn)
 {
-	if (seqn == ((kctx->lseqn - 1) & KERMIT_SEQ_MASK)) {
-		return true;
-	}
-	return false;
+	uint8_t dist = (seqn - kctx->lseqn) & KERMIT_SEQ_MASK;
+	return dist > ((KERMIT_SEQ_MASK + 1) >> 1);
 }
 
 bool kermit_seq_isout(struct kermit_context *kctx, uint8_t seqn)
 {
-	if (kermit_seq_isdup(kctx, seqn)) {
+	if (kermit_seq_acked(kctx, seqn)) {
 		return false;
 	}
 	if (kctx->lseqn == seqn) {
@@ -357,9 +355,6 @@ void kermit_handle_fhdr(struct kermit_context *kctx)
 		return;
 	}
 	kermit_ack(kctx, kermit_seq_get(kctx->buf));
-	if (kermit_seq_isdup(kctx, kermit_seq_get(kctx->buf))) {
-		return;
-	}
 	kctx->lseqn = (kctx->lseqn + 1) & KERMIT_SEQ_MASK;
 	return;
 }
@@ -371,9 +366,6 @@ void kermit_handle_data(struct kermit_context *kctx)
 		return;
 	}
 	kermit_ack(kctx, kermit_seq_get(kctx->buf));
-	if (kermit_seq_isdup(kctx, kermit_seq_get(kctx->buf))) {
-		return;
-	}
 	kctx->lseqn = (kctx->lseqn + 1) & KERMIT_SEQ_MASK;
 }
 
@@ -384,9 +376,6 @@ void kermit_handle_eof(struct kermit_context *kctx)
 		return;
 	}
 	kermit_ack(kctx, kermit_seq_get(kctx->buf));
-	if (kermit_seq_isdup(kctx, kermit_seq_get(kctx->buf))) {
-		return;
-	}
 	kctx->lseqn = (kctx->lseqn + 1) & KERMIT_SEQ_MASK;
 }
 
@@ -440,7 +429,11 @@ void kermit_handle_rxpkt(struct kermit_context *kctx)
 		kermit_rx_reset(kctx);
 		return;
 	}
-
+	if (kermit_seq_acked(kctx, rseqn) == true) {
+		kermit_ack(kctx, kermit_seq_get(kctx->buf));
+		kermit_rx_reset(kctx);
+		return;
+	}
 	switch (rtype) {
 	case 'F':
 		kermit_handle_fhdr(kctx);

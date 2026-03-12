@@ -679,32 +679,26 @@ void kermit_selftest(void)
 	kermit_assert(kermit_datalen_get(test_link_buf) == 0);
 
 	kctx->lseqn = 0;
-	kermit_assert(kermit_seq_isdup(kctx, 63) == true);
-	kermit_assert(kermit_seq_isout(kctx, 63) == false);
-	kermit_assert(kermit_seq_isdup(kctx, 0) == false);
+	kermit_assert(kermit_seq_acked(kctx, 63) == true);
+	kermit_assert(kermit_seq_acked(kctx, 33) == true);
+	kermit_assert(kermit_seq_acked(kctx, 32) == false);
+	kermit_assert(kermit_seq_acked(kctx, 31) == false);
+	kermit_assert(kermit_seq_acked(kctx, 0) == false);
+	kermit_assert(kermit_seq_acked(kctx, 1) == false);
+
+	kctx->lseqn = 8;
+	kermit_assert(kermit_seq_acked(kctx, 63) == true);
+	kermit_assert(kermit_seq_acked(kctx, 41) == true);
+	kermit_assert(kermit_seq_acked(kctx, 8) == false);
+	kermit_assert(kermit_seq_acked(kctx, 9) == false);
+	kermit_assert(kermit_seq_acked(kctx, 8 + 31) == false);
+	kermit_assert(kermit_seq_acked(kctx, 8 + 32) == false);
+	kermit_assert(kermit_seq_acked(kctx, 8 + 33) == true);
+
+	kctx->lseqn = 0;
 	kermit_assert(kermit_seq_isout(kctx, 0) == false);
-
-	bzero(&test_link_buf[0], KERMIT_BUFSIZE);
-	kctx->lseqn = 0;
-	kermit_pkt_init(kctx->buf, (kctx->lseqn + 1) & KERMIT_SEQ_MASK, 0xFF);
-	kermit_sum_upd(kctx->buf);
-	kermit_eol_upd(kctx->buf);
-	kctx->rxdone = true;
-	kermit_handle_rxpkt(kctx);
-	kermit_assert(kermit_pkt_chk(test_link_buf) == true);
-	kermit_assert(kermit_seq_get(test_link_buf) == kctx->lseqn);
-	kermit_assert(kermit_type_get(test_link_buf) == 'N');
-
-	bzero(&test_link_buf[0], KERMIT_BUFSIZE);
-	kctx->lseqn = 0;
-	kermit_pkt_init(kctx->buf, (kctx->lseqn - 2) & KERMIT_SEQ_MASK, 0xFF);
-	kermit_sum_upd(kctx->buf);
-	kermit_eol_upd(kctx->buf);
-	kctx->rxdone = true;
-	kermit_handle_rxpkt(kctx);
-	kermit_assert(kermit_pkt_chk(test_link_buf) == true);
-	kermit_assert(kermit_seq_get(test_link_buf) == kctx->lseqn);
-	kermit_assert(kermit_type_get(test_link_buf) == 'N');
+	kermit_assert(kermit_seq_isout(kctx, 1) == true);
+	kermit_assert(kermit_seq_isout(kctx, 63) == false);
 
 	bzero(&test_link_buf[0], KERMIT_BUFSIZE);
 	kctx->lseqn = 0;

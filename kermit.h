@@ -56,7 +56,7 @@ enum {
 #endif
 
 #ifndef KERMIT_WINSIZE
-#define KERMIT_WINSIZE 2
+#define KERMIT_WINSIZE 31
 #endif
 
 enum {
@@ -125,7 +125,7 @@ extern void kermit_nak(struct kermit_context *kctx);
 extern void kermit_ack(struct kermit_context *kctx, uint8_t seqn);
 extern uint8_t kermit_param_fill(uint8_t *out, uint8_t outmaxlen);
 extern void kermit_make_sinit(uint8_t *pkt, uint8_t pktmaxsize, uint8_t seqn);
-extern bool kermit_seq_isdup(struct kermit_context *kctx, uint8_t seqn);
+extern bool kermit_seq_acked(struct kermit_context *kctx, uint8_t seqn);
 extern bool kermit_seq_isout(struct kermit_context *kctx, uint8_t seqn);
 extern void kermit_error(struct kermit_context *kctx, const char *errmsg);
 extern void kermit_handle_rxpkt(struct kermit_context *kctx);
