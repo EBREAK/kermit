@@ -305,7 +305,7 @@ void kermit_handle_sinit(struct kermit_context *kctx)
 bool kermit_seq_acked(struct kermit_context *kctx, uint8_t seqn)
 {
 	uint8_t dist = (seqn - kctx->lseqn) & KERMIT_SEQ_MASK;
-	return dist > ((KERMIT_SEQ_MASK + 1) >> 1);
+	return dist >= ((KERMIT_SEQ_MASK + 1) >> 1);
 }
 
 bool kermit_seq_isout(struct kermit_context *kctx, uint8_t seqn)
@@ -421,7 +421,7 @@ void kermit_handle_rxpkt(struct kermit_context *kctx)
 	case 'E':
 		kermit_handle_error(kctx);
 		kermit_rx_reset(kctx);
-		break;
+		return;
 	}
 	rseqn = kermit_seq_get(kctx->buf);
 	if (kermit_seq_isout(kctx, rseqn) == true) {
