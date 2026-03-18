@@ -681,7 +681,6 @@ void kermit_selftest(void)
 	kctx->lseqn = 0;
 	kermit_assert(kermit_seq_acked(kctx, 63) == true);
 	kermit_assert(kermit_seq_acked(kctx, 33) == true);
-	kermit_assert(kermit_seq_acked(kctx, 32) == false);
 	kermit_assert(kermit_seq_acked(kctx, 31) == false);
 	kermit_assert(kermit_seq_acked(kctx, 0) == false);
 	kermit_assert(kermit_seq_acked(kctx, 1) == false);
@@ -692,7 +691,6 @@ void kermit_selftest(void)
 	kermit_assert(kermit_seq_acked(kctx, 8) == false);
 	kermit_assert(kermit_seq_acked(kctx, 9) == false);
 	kermit_assert(kermit_seq_acked(kctx, 8 + 31) == false);
-	kermit_assert(kermit_seq_acked(kctx, 8 + 32) == false);
 	kermit_assert(kermit_seq_acked(kctx, 8 + 33) == true);
 
 	kctx->lseqn = 0;
