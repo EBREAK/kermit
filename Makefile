@@ -5,3 +5,6 @@ kr:
 
 clean:
 	rm -f *.out kr
+
+ctags:
+	ctags *.c *.h
