@@ -194,15 +194,15 @@ void kermit_rx_reset(struct kermit_context *kctx)
 	kctx->rxdone = false;
 }
 
-void kermit_pkt_send(struct kermit_context *kctx)
+void kermit_pkt_send(struct kermit_context *kctx, uint8_t *buf)
 {
-	if (kermit_pkt_chk(kctx->buf) == false) {
+	if (kermit_pkt_chk(buf) == false) {
 		return;
 	}
 	if (kctx->link_send == NULL) {
 		return;
 	}
-	kctx->link_send(kctx->buf, kermit_len_get(kctx->buf) + KERMIT_EOL_SIZE);
+	kctx->link_send(buf, kermit_len_get(buf) + KERMIT_EOL_SIZE);
 }
 
 void kermit_nak(struct kermit_context *kctx)
@@ -210,7 +210,7 @@ void kermit_nak(struct kermit_context *kctx)
 	kermit_pkt_init(kctx->buf, kctx->lseqn, 'N');
 	kermit_sum_upd(kctx->buf);
 	kermit_eol_upd(kctx->buf);
-	kermit_pkt_send(kctx);
+	kermit_pkt_send(kctx, kctx->buf);
 }
 
 void kermit_ack(struct kermit_context *kctx, uint8_t seqn)
@@ -218,7 +218,7 @@ void kermit_ack(struct kermit_context *kctx, uint8_t seqn)
 	kermit_pkt_init(kctx->buf, seqn, 'Y');
 	kermit_sum_upd(kctx->buf);
 	kermit_eol_upd(kctx->buf);
-	kermit_pkt_send(kctx);
+	kermit_pkt_send(kctx, kctx->buf);
 }
 
 uint8_t kermit_param_fill(uint8_t *out, uint8_t outmaxlen)
@@ -299,7 +299,7 @@ void kermit_handle_sinit(struct kermit_context *kctx)
 			  kermit_seq_get(kctx->buf));
 	kermit_type_set(kctx->buf, 'Y');
 	kermit_sum_upd(kctx->buf);
-	kermit_pkt_send(kctx);
+	kermit_pkt_send(kctx, kctx->buf);
 }
 
 bool kermit_seq_acked(struct kermit_context *kctx, uint8_t seqn)
@@ -335,7 +335,39 @@ void kermit_error(struct kermit_context *kctx, const char *errmsg)
 	}
 	kermit_sum_upd(kctx->buf);
 	kermit_eol_upd(kctx->buf);
-	kermit_pkt_send(kctx);
+	kermit_pkt_send(kctx, kctx->buf);
+}
+
+void kermit_make_fhdr(uint8_t *pkt, const char *filename, uint8_t lseqn)
+{
+	kermit_pkt_init(pkt, lseqn, 'F');
+	uint8_t len_filename = strlen(filename);
+	while (len_filename > 0) {
+		kermit_data_append(pkt, filename[0]);
+		if (kermit_len_get(pkt) >=
+		    KERMIT_BUFSIZE - KERMIT_HDR_SIZE - KERMIT_CHK_SIZE -
+			    KERMIT_EOL_SIZE) {
+			break;
+		}
+		filename += 1;
+		len_filename -= 1;
+	}
+	kermit_sum_upd(pkt);
+	kermit_eol_upd(pkt);
+}
+
+void kermit_make_eof(uint8_t *pkt, uint8_t lseqn)
+{
+	kermit_pkt_init(pkt, lseqn, 'Z');
+	kermit_sum_upd(pkt);
+	kermit_eol_upd(pkt);
+}
+
+void kermit_make_break(uint8_t *pkt, uint8_t lseqn)
+{
+	kermit_pkt_init(pkt, lseqn, 'B');
+	kermit_sum_upd(pkt);
+	kermit_eol_upd(pkt);
 }
 
 void kermit_handle_unknown(struct kermit_context *kctx)
@@ -396,6 +428,22 @@ void kermit_handle_error(struct kermit_context *kctx)
 	}
 }
 
+void kermit_handle_resend(struct kermit_context *kctx)
+{
+	if (kctx->resend_cb != NULL) {
+		kctx->resend_cb(kctx);
+		return;
+	}
+}
+
+void kermit_handle_ack(struct kermit_context *kctx)
+{
+	if (kctx->ack_cb != NULL) {
+		kctx->ack_cb(kctx);
+		return;
+	}
+}
+
 void kermit_handle_rxpkt(struct kermit_context *kctx)
 {
 	uint8_t rtype, rseqn;
@@ -404,7 +452,12 @@ void kermit_handle_rxpkt(struct kermit_context *kctx)
 	}
 	if (kermit_pkt_chk(kctx->buf) == false) {
 		/* BAD PACKET */
-		kermit_nak(kctx);
+		if (kctx->role == KERMIT_ROLE_RECV) { 
+			kermit_nak(kctx);
+		}
+		if (kctx->role == KERMIT_ROLE_SEND) {
+			kermit_handle_resend(kctx);
+		}
 		kermit_rx_reset(kctx);
 		return;
 	}
@@ -422,15 +475,31 @@ void kermit_handle_rxpkt(struct kermit_context *kctx)
 		kermit_handle_error(kctx);
 		kermit_rx_reset(kctx);
 		return;
+	case 'N':
+		if (kctx->role == KERMIT_ROLE_SEND) {
+			kermit_handle_resend(kctx);
+		}
+		kermit_rx_reset(kctx);
+		return;
 	}
 	rseqn = kermit_seq_get(kctx->buf);
 	if (kermit_seq_isout(kctx, rseqn) == true) {
-		kermit_nak(kctx);
+		if (kctx->role == KERMIT_ROLE_RECV) {
+			kermit_nak(kctx);
+		}
+		if (kctx->role == KERMIT_ROLE_SEND) {
+			kermit_handle_resend(kctx);
+		}
 		kermit_rx_reset(kctx);
 		return;
 	}
 	if (kermit_seq_acked(kctx, rseqn) == true) {
-		kermit_ack(kctx, kermit_seq_get(kctx->buf));
+		if (kctx->role == KERMIT_ROLE_RECV) {
+			kermit_ack(kctx, kermit_seq_get(kctx->buf));
+		}
+		if (kctx->role == KERMIT_ROLE_SEND) {
+			kermit_handle_resend(kctx);
+		}
 		kermit_rx_reset(kctx);
 		return;
 	}
@@ -443,6 +512,11 @@ void kermit_handle_rxpkt(struct kermit_context *kctx)
 		break;
 	case 'Z':
 		kermit_handle_eof(kctx);
+		break;
+	case 'Y':
+		if (kctx->role == KERMIT_ROLE_SEND) {
+			kermit_handle_ack(kctx);
+		}
 		break;
 	default:
 		kermit_handle_unknown(kctx);

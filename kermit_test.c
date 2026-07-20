@@ -603,7 +603,7 @@ void kermit_selftest(void)
 	kermit_pkt_init(kctx->buf, 1, 'Y');
 	kermit_sum_upd(kctx->buf);
 	kermit_eol_upd(kctx->buf);
-	kermit_pkt_send(kctx);
+	kermit_pkt_send(kctx, kctx->buf);
 	kermit_assert(memcmp(kctx->buf, &test_link_buf[0],
 			     kermit_len_get(kctx->buf) + KERMIT_EOL_SIZE) != 0);
 
@@ -611,7 +611,7 @@ void kermit_selftest(void)
 
 	bzero(&test_link_buf[0], KERMIT_BUFSIZE);
 	kermit_pkt_init(kctx->buf, 0, 'N');
-	kermit_pkt_send(kctx);
+	kermit_pkt_send(kctx, kctx->buf);
 	kermit_assert(memcmp(kctx->buf, &test_link_buf[0],
 			     kermit_len_get(kctx->buf) + KERMIT_EOL_SIZE) != 0);
 
@@ -619,7 +619,7 @@ void kermit_selftest(void)
 	kermit_pkt_init(kctx->buf, 1, 'Y');
 	kermit_sum_upd(kctx->buf);
 	kermit_eol_upd(kctx->buf);
-	kermit_pkt_send(kctx);
+	kermit_pkt_send(kctx, kctx->buf);
 	kermit_assert(memcmp(kctx->buf, &test_link_buf[0],
 			     kermit_len_get(kctx->buf) + KERMIT_EOL_SIZE) == 0);
 	kermit_assert(test_link_buf[KERMIT_MARK] == 0x01);

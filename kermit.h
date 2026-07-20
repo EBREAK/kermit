@@ -66,6 +66,7 @@ enum {
 
 struct kermit_context {
 	uint8_t role;
+	uint8_t stat;
 	uint8_t buf[KERMIT_BUFSIZE];
 	uint8_t idx;
 	bool rxdone;
@@ -78,6 +79,8 @@ struct kermit_context {
 	void (*eof_cb)(struct kermit_context *kctx);
 	void (*break_cb)(struct kermit_context *kctx);
 	void (*error_cb)(struct kermit_context *kctx);
+	void (*resend_cb)(struct kermit_context *kctx);
+	void (*ack_cb)(struct kermit_context *kctx);
 	void (*unknown_cb)(struct kermit_context *kctx);
 };
 
@@ -120,11 +123,14 @@ extern void kermit_eol_upd(uint8_t *pkt);
 extern bool kermit_pkt_chk(uint8_t *pkt);
 extern void kermit_handle_char(struct kermit_context *kctx, uint8_t c);
 extern void kermit_rx_reset(struct kermit_context *kctx);
-extern void kermit_pkt_send(struct kermit_context *kctx);
+extern void kermit_pkt_send(struct kermit_context *kctx, uint8_t *buf);
 extern void kermit_nak(struct kermit_context *kctx);
 extern void kermit_ack(struct kermit_context *kctx, uint8_t seqn);
 extern uint8_t kermit_param_fill(uint8_t *out, uint8_t outmaxlen);
 extern void kermit_make_sinit(uint8_t *pkt, uint8_t pktmaxsize, uint8_t seqn);
+extern void kermit_make_fhdr(uint8_t *pkt, const char *filename, uint8_t seqn);
+extern void kermit_make_eof(uint8_t *pkt, uint8_t seqn);
+extern void kermit_make_break(uint8_t *pkt, uint8_t seqn);
 extern bool kermit_seq_acked(struct kermit_context *kctx, uint8_t seqn);
 extern bool kermit_seq_isout(struct kermit_context *kctx, uint8_t seqn);
 extern void kermit_error(struct kermit_context *kctx, const char *errmsg);
