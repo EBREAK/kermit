@@ -1,4 +1,4 @@
-CFLAGS += -Wall -Wextra -Wpedantic -Oz -ggdb
+CFLAGS += -Wall -Wextra -Wpedantic -Os -ggdb
 
 all: kr ks
 
