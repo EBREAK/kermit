@@ -80,7 +80,7 @@ int kermit_make_data(uint8_t *pkt, uint8_t lseqn)
 
 void kermit_send_next(struct kermit_context *kctx)
 {
-	size_t ret;
+	ssize_t ret;
 	switch (kctx->stat) {
 	case 'S':
 		kctx->lseqn = 0;
